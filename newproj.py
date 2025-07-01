@@ -95,6 +95,23 @@ def push_to_github(base_path: Path, name: str):
     except FileNotFoundError:
         print("❌ GitHub CLI (`gh`) is not installed or not in PATH.")
         return
+
+    if not gh_authenticated():
+        print("⚠️ GitHub CLI is not authenticated.")
+        auth = input("Run `gh auth login` now? (y/N): ").strip().lower()
+        if auth == "y":
+            try:
+                run("gh auth login")
+            except subprocess.CalledProcessError:
+                print("❌ Authentication failed or was cancelled.")
+                return
+            if not gh_authenticated():
+                print("❌ Still not authenticated after `gh auth login`. Aborting GitHub push.")
+                return
+        else:
+            print("❌ Skipping GitHub push due to lack of authentication.")
+            return
+
     visibility = input("GitHub repo visibility? [public/private] (default: private): ").strip().lower()
     if visibility not in ("public", "private"):
         visibility = "private"
@@ -104,6 +121,10 @@ def push_to_github(base_path: Path, name: str):
 # --- GitHub CLI helpers ---
 def github_cli_installed():
     return shutil.which("gh") is not None
+
+def gh_authenticated():
+    result = subprocess.run("gh auth status", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return result.returncode == 0
 
 def install_github_cli():
     system = platform.system()
