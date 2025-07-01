@@ -1,5 +1,3 @@
-
-
 #!/usr/bin/env python3
 import argparse
 import os
@@ -86,7 +84,10 @@ def create_venv_and_install(base_path: Path):
 def init_git_repo(base_path: Path):
     run("git init", cwd=base_path)
     run("git add .", cwd=base_path)
-    run("git commit -m 'Initial project scaffold'", cwd=base_path)
+    try:
+        run("git commit -m 'Initial project scaffold'", cwd=base_path)
+    except subprocess.CalledProcessError:
+        print("⚠️ Git commit failed — possibly because there's nothing new to commit.")
 
 def push_to_github(base_path: Path, name: str):
     try:
@@ -110,7 +111,7 @@ def install_github_cli():
     if system == "Darwin":
         if shutil.which("brew") is None:
             print("❌ Homebrew is not installed. Cannot install GitHub CLI.")
-            return
+            return False
         print("Installing GitHub CLI via Homebrew...")
         run("brew install gh")
     elif system == "Linux":
@@ -122,8 +123,12 @@ def install_github_cli():
             run("sudo dnf install -y gh")
         else:
             print("❌ Unsupported Linux package manager.")
+            return False
     else:
         print("❌ GitHub CLI installation not supported on this OS.")
+        return False
+
+    return github_cli_installed()
 
 def main():
     parser = argparse.ArgumentParser(description="Scaffold a new Python project.")
@@ -146,14 +151,16 @@ def main():
     create_venv_and_install(base_path)
     init_git_repo(base_path)
 
-    if not github_cli_installed():
+    gh_ready = github_cli_installed()
+    if not gh_ready:
         offer = input("GitHub CLI not found. Install it now? (y/N): ").strip().lower()
         if offer == "y":
-            install_github_cli()
+            gh_ready = install_github_cli()
 
-    push = input("Push to GitHub? (y/N): ").strip().lower()
-    if push == "y":
-        push_to_github(base_path, name)
+    if gh_ready:
+        push = input("Push to GitHub? (y/N): ").strip().lower()
+        if push == "y":
+            push_to_github(base_path, name)
 
     print(f"✅ Project '{name}' created at {base_path}")
 
