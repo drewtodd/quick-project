@@ -4,6 +4,8 @@
 import argparse
 import os
 import subprocess
+import platform
+import shutil
 from pathlib import Path
 
 BASE_DEPENDENCIES = ["psycopg2-binary"]
@@ -97,6 +99,32 @@ def push_to_github(base_path: Path, name: str):
         visibility = "private"
     run(f"gh repo create {name} --source=. --{visibility} --push", cwd=base_path)
 
+
+# --- GitHub CLI helpers ---
+def github_cli_installed():
+    return shutil.which("gh") is not None
+
+def install_github_cli():
+    system = platform.system()
+
+    if system == "Darwin":
+        if shutil.which("brew") is None:
+            print("❌ Homebrew is not installed. Cannot install GitHub CLI.")
+            return
+        print("Installing GitHub CLI via Homebrew...")
+        run("brew install gh")
+    elif system == "Linux":
+        if shutil.which("apt") is not None:
+            print("Installing GitHub CLI via apt...")
+            run("sudo apt update && sudo apt install -y gh")
+        elif shutil.which("dnf") is not None:
+            print("Installing GitHub CLI via dnf...")
+            run("sudo dnf install -y gh")
+        else:
+            print("❌ Unsupported Linux package manager.")
+    else:
+        print("❌ GitHub CLI installation not supported on this OS.")
+
 def main():
     parser = argparse.ArgumentParser(description="Scaffold a new Python project.")
     parser.add_argument("path", help="Path to the new project directory")
@@ -117,6 +145,11 @@ def main():
     create_project_structure(base_path, name, include_web)
     create_venv_and_install(base_path)
     init_git_repo(base_path)
+
+    if not github_cli_installed():
+        offer = input("GitHub CLI not found. Install it now? (y/N): ").strip().lower()
+        if offer == "y":
+            install_github_cli()
 
     push = input("Push to GitHub? (y/N): ").strip().lower()
     if push == "y":
