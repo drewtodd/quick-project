@@ -1,0 +1,4 @@
+[tool.ruff]
+line-length = 100
+exclude = ["migrations", "tests/data"]
+target-version = "py311"
