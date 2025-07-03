@@ -1,4 +1,4 @@
-# new-project
+# quick-project
 
 A lightweight, scriptable Python project scaffolding tool.
 
@@ -24,7 +24,7 @@ This tool bootstraps new Python projects with my preferred development stack, in
 ## Usage
 
 ```bash
-python newproj.py /path/to/new-project
+python quickproj.py /path/to/new-project
 ```
 
 User is prompted to:
